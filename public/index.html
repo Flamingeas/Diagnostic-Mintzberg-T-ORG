@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnostic Mintzberg — Configuration organisationnelle</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #f5f5f5; color: #222; font-family: system-ui, -apple-system, sans-serif; font-size: 15px; line-height: 1.6; }
+
+/* le header*/
+.masthead { background: #fff; border-bottom: 1px solid #e0e0e0; }
+.masthead-inner { max-width: 760px; margin: 0 auto; padding: 32px 24px; }
+.masthead-badge { font-size: 12px; color: #888; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .08em; }
+.masthead h1 { font-size: clamp(20px, 3vw, 28px); font-weight: 700; margin-bottom: 10px; }
+.masthead p { font-size: 14px; color: #555; max-width: 560px; }
+.masthead-stats { display: flex; gap: 24px; margin-top: 16px; }
+.stat .val { font-size: 22px; font-weight: 700; color: #3b82f6; }
+.stat .lbl { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: .06em; }
+
+.theory-strip { background: #f0f4ff; border-bottom: 1px solid #d0d8f0; padding: 10px 24px; }
+.theory-strip-inner { max-width: 760px; margin: 0 auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.theory-strip .lbl { font-size: 11px; color: #666; white-space: nowrap; }
+.tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.tag { background: #fff; border: 1px solid #c8d4f0; color: #445; font-size: 11px; padding: 2px 9px; border-radius: 20px; }
+
+#progress-bar-wrap {
+  background: #fff; border-bottom: 1px solid #e0e0e0;
+  padding: 10px 24px; position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; gap: 12px;
+}
+#progress-label { font-size: 12px; color: #555; font-weight: 600; min-width: 100px; white-space: nowrap; }
+#progress-track { flex: 1; height: 4px; background: #e0e0e0; border-radius: 4px; overflow: hidden; }
+#progress-fill { height: 100%; background: #3b82f6; width: 0%; transition: width .35s ease; }
+#progress-pct { font-size: 12px; color: #888; min-width: 36px; text-align: right; }
+
+main { max-width: 760px; margin: 0 auto; padding: 32px 24px 72px; }
+
+.dim-header { display: flex; gap: 12px; align-items: flex-start; margin: 40px 0 14px; }
+.dim-header .accent-bar { width: 3px; height: 40px; background: #3b82f6; border-radius: 2px; flex-shrink: 0; margin-top: 2px; }
+.dim-num { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 2px; }
+.dim-title { font-size: 16px; font-weight: 700; color: #222; }
+.dim-theory { font-size: 12px; color: #888; font-style: italic; margin-top: 2px; }
+
+.question-card {
+  background: #fff; border: 1px solid #e0e0e0; border-radius: 8px;
+  margin-bottom: 12px; overflow: hidden;
+}
+.question-card.answered { border-left: 3px solid #3b82f6; }
+.q-header { padding: 16px 18px 0; display: flex; gap: 12px; align-items: flex-start; }
+.q-num { font-size: 12px; color: #3b82f6; font-weight: 700; padding-top: 1px; white-space: nowrap; }
+.q-dimension { font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.q-text { font-size: 14px; font-weight: 600; color: #222; line-height: 1.5; padding-bottom: 12px; }
+
+.options { border-top: 1px solid #f0f0f0; }
+.option {
+  display: flex; align-items: flex-start; gap: 12px; padding: 11px 18px;
+  cursor: pointer; border-bottom: 1px solid #f5f5f5; transition: background .12s;
+}
+.option:last-child { border-bottom: none; }
+.option:hover { background: #f8f9ff; }
+#company-name:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.12); }
+.option.selected { background: #eff6ff; }
+.option input { display: none; }
+.radio-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #d0d0d0; flex-shrink: 0; margin-top: 2px; background: #fff; transition: all .15s; }
+.option.selected .radio-dot { border-color: #3b82f6; background: #3b82f6; box-shadow: inset 0 0 0 3px #fff; }
+.option-letter { font-size: 11px; font-weight: 700; color: #bbb; min-width: 14px; padding-top: 2px; }
+.option.selected .option-letter { color: #3b82f6; }
+.option-text { font-size: 13px; color: #333; line-height: 1.5; }
+
+/* bouton submit */
+#submit-wrap { margin-top: 40px; padding-top: 24px; border-top: 1px solid #e0e0e0; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+#submit-btn {
+  background: #3b82f6; color: #fff; border: none; padding: 12px 48px;
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  border-radius: 6px; cursor: pointer; transition: background .2s;
+}
+#submit-btn:hover:not(:disabled) { background: #2563eb; }
+#submit-btn:disabled { background: #d0d0d0; color: #999; cursor: not-allowed; }
+#submit-note { font-size: 13px; color: #888; text-align: center; }
+
+/* résultats */
+#result-section { display: none; }
+.result-masthead { background: #1e3a5f; color: #fff; padding: 32px 28px; border-radius: 8px; margin-bottom: 18px; }
+.result-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: #93c5fd; margin-bottom: 8px; }
+.result-config-name { font-size: clamp(18px, 3.5vw, 26px); font-weight: 700; margin-bottom: 6px; }
+.result-mechanism { font-size: 12px; color: rgba(255,255,255,.55); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
+.result-mechanism span { color: #93c5fd; font-weight: 600; }
+.result-desc { font-size: 13px; color: rgba(255,255,255,.75); line-height: 1.7; max-width: 540px; }
+
+.theory-recap { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px 20px; margin-bottom: 14px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.theory-item .t-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: #aaa; margin-bottom: 4px; }
+.theory-item .t-value { font-size: 13px; font-weight: 600; color: #222; line-height: 1.4; }
+.theory-item .t-value span { color: #3b82f6; }
+
+.panel { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; margin-bottom: 14px; }
+.panel-header { background: #f8f8f8; border-bottom: 1px solid #e0e0e0; padding: 10px 18px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #555; font-weight: 700; }
+.score-row { display: grid; grid-template-columns: 200px 1fr 48px; align-items: center; gap: 12px; padding: 10px 18px; border-bottom: 1px solid #f5f5f5; }
+.score-row:last-child { border-bottom: none; }
+.score-row.top { background: #eff6ff; }
+.score-name { font-size: 13px; font-weight: 500; color: #333; }
+.score-row.top .score-name { font-weight: 700; color: #1e3a5f; }
+.score-bar-track { height: 5px; background: #e8e8e8; border-radius: 4px; overflow: hidden; }
+.score-bar-fill { height: 100%; background: #d0d0d0; border-radius: 4px; width: 0%; transition: width .9s cubic-bezier(.4,0,.2,1); }
+.score-row.top .score-bar-fill { background: #3b82f6; }
+.score-pct { font-size: 12px; font-weight: 600; color: #555; text-align: right; }
+
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.detail-panel { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; }
+.detail-panel h4 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #3b82f6; font-weight: 700; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #f0f0f0; }
+.detail-panel ul { list-style: none; }
+.detail-panel ul li { font-size: 13px; color: #333; padding: 5px 0; border-bottom: 1px solid #f5f5f5; display: flex; gap: 8px; line-height: 1.5; }
+.detail-panel ul li:last-child { border-bottom: none; }
+.detail-panel ul li::before { content: '·'; color: #bbb; font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+
+#reset-btn { display: block; margin: 24px auto 0; background: transparent; border: 1.5px solid #333; color: #333; padding: 10px 32px; font-family: inherit; font-size: 13px; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all .2s; }
+#reset-btn:hover { background: #333; color: #fff; }
+#print-btn { display: block; margin: 10px auto 0; background: transparent; border: 1.5px solid #3b82f6; color: #3b82f6; padding: 10px 32px; font-family: inherit; font-size: 13px; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all .2s; }
+#print-btn:hover { background: #3b82f6; color: #fff; }
+
+@media(max-width:600px){
+  .masthead-inner, main, #progress-bar-wrap, .theory-strip { padding-left: 16px; padding-right: 16px; }
+  .masthead-stats { gap: 16px; }
+  .score-row { grid-template-columns: 130px 1fr 38px; }
+  .theory-recap, .detail-grid { grid-template-columns: 1fr; }
+}
+
+@media print {
+  .masthead, .theory-strip, #progress-bar-wrap, #quiz-section, #reset-btn, #print-btn { display: none !important; }
+  body { background: #fff; }
+  #result-section { display: block !important; }
+  .result-masthead { background: #1e3a5f !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="masthead-inner">
+    <div>
+      <div class="masthead-badge">Diagnostic organisationnel</div>
+      <h1>Quelle est la configuration de votre organisation ?</h1>
+      <p>Ce questionnaire s'appuie sur le modèle de Henry Mintzberg (<em>Structure et dynamique des organisations</em>, 1979). Chaque question cible un axe discriminant distinct — 11 questions suffisent à identifier votre configuration structurelle dominante.</p>
+    </div>
+    <div class="masthead-stats">
+      <div class="stat"><div class="val">11</div><div class="lbl">questions</div></div>
+      <div class="stat"><div class="val">6</div><div class="lbl">configurations</div></div>
+      <div class="stat"><div class="val">~3</div><div class="lbl">minutes</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="theory-strip">
+  <div class="theory-strip-inner">
+    <span class="lbl">Cadre théorique</span>
+    <div class="tags">
+      <span class="tag">Mintzberg 1979 / 1989</span>
+      <span class="tag">6 mécanismes de coordination</span>
+      <span class="tag">6 parties de l'organisation</span>
+      <span class="tag">7 configurations structurelles</span>
+    </div>
+  </div>
+</div>
+
+<div id="progress-bar-wrap">
+  <span id="progress-label">0 / 11 réponses</span>
+  <div id="progress-track"><div id="progress-fill"></div></div>
+  <span id="progress-pct">0 %</span>
+</div>
+
+<main>
+<div id="quiz-section">
+
+<!-- identité de l'entreprise -->
+<div class="question-card" data-q="company" style="margin-bottom: 32px;">
+  <div class="q-header"><span class="q-num">Q.01</span>
+    <div>
+      <div class="q-dimension">Identification</div>
+      <div class="q-text">Quel est le nom de votre entreprise ou organisation ?</div>
+    </div>
+  </div>
+  <div style="padding: 14px 18px; display: flex; gap: 12px; flex-wrap: wrap;">
+    <input type="text" id="company-name" placeholder="Nom de l'entreprise…"
+      style="flex: 2 1 220px; padding: 10px 14px; font-size: 14px; font-family: inherit;
+             border: 1px solid #d0d0d0; border-radius: 6px; outline: none;
+             transition: border-color .15s; color: #222; background: #fff;">
+    <select id="company-size"
+      style="flex: 1 1 160px; padding: 10px 14px; font-size: 14px; font-family: inherit;
+             border: 1px solid #d0d0d0; border-radius: 6px; outline: none;
+             transition: border-color .15s; color: #222; background: #fff; cursor: pointer;">
+      <option value="" disabled selected>Taille de l'entreprise</option>
+      <option value="1-9">1–9 salariés (micro)</option>
+      <option value="10-49">10–49 salariés (petite)</option>
+      <option value="50-249">50–249 salariés (PME)</option>
+      <option value="250-999">250–999 salariés (ETI)</option>
+      <option value="1000+">1 000+ salariés (grande)</option>
+    </select>
+  </div>
+</div>
+
+<!-- bloc 1 -->
+<div class="dim-header">
+  <div class="accent-bar"></div>
+  <div class="dim-meta">
+    <div class="dim-num">Axe 01 — Mécanisme de coordination dominant</div>
+    <div class="dim-title">Comment le travail est-il coordonné ?</div>
+    <div class="dim-theory">Mintzberg : le mécanisme dominant détermine à lui seul la configuration probable</div>
+  </div>
+</div>
+
+<div class="question-card" data-q="1">
+  <div class="q-header"><span class="q-num">Q.02</span>
+    <div>
+      <div class="q-dimension">Mécanisme de coordination</div>
+      <div class="q-text">Quel est le principal mécanisme qui assure la cohérence du travail dans votre organisation ?</div>
+    </div>
+  </div>
+  <div class="options">
+    <label class="option"><input type="radio" name="q1" value="SE,BM"><span class="radio-dot"></span><span class="option-letter">A</span><span class="option-text">Un supérieur donne des ordres et contrôle directement l'exécution — <em>supervision directe</em></span></label>
+    <label class="option"><input type="radio" name="q1" value="BM"><span class="radio-dot"></span><span class="option-letter">B</span><span class="option-text">Des procédures, protocoles et processus standardisés dictent la façon de travailler — <em>standardisation des procédés</em></span></label>
+    <label class="option"><input type="radio" name="q1" value="DO,AD"><span class="radio-dot"></span><span class="option-letter">C</span><span class="option-text">Les objectifs et résultats attendus sont définis à l'avance, chacun s'organise librement — <em>standardisation des résultats</em></span></label>
+    <label class="option"><input type="radio" name="q1" value="BP"><span class="radio-dot"></span><span class="option-letter">D</span><span class="option-text">L'expertise et la formation des professionnels garantissent la cohérence — <em>standardisation des qualifications</em></span></label>
+    <label class="option"><input type="radio" name="q1" value="AD,MI"><span class="radio-dot"></span><span class="option-letter">E</span><span class="option-text">Les équipes s'organisent entre elles de façon informelle par échange direct — <em>ajustement mutuel</em></span></label>
+    <label class="option"><input type="radio" name="q1" value="MI"><span class="radio-dot"></span><span class="option-letter">F</span><span class="option-text">Une culture ou une idéologie commune guide naturellement les comportements — <em>standardisation des normes</em></span></label>
+  </div>
+</div>
+
+<div class="question-card" data-q="2">
+  <div class="q-header"><span class="q-num">Q.03</span>
+    <div>
+      <div class="q-dimension">Formalisation</div>
+      <div class="q-text">Les tâches et comportements sont-ils formalisés (procédures écrites, fiches de poste, codes de conduite) ?</div>
+    </div>
+  </div>
+  <div class="options">
+    <label class="option"><input type="radio" name="q2" value="BM"><span class="radio-dot"></span><span class="option-letter">A</span><span class="option-text">Très fortement — chaque tâche est codifiée, des instructions précises couvrent la plupart des situations</span></label>
+    <label class="option"><input type="radio" name="q2" value="DO,BP"><span class="radio-dot"></span><span class="option-letter">B</span><span class="option-text">Partiellement — des cadres existent mais laissent de la latitude à chaque unité ou professionnel</span></label>
+    <label class="option"><input type="radio" name="q2" value="SE"><span class="radio-dot"></span><span class="option-letter">C</span><span class="option-text">Peu — les directives viennent du dirigeant au cas par cas, sans documentation systématique</span></label>
+    <label class="option"><input type="radio" name="q2" value="AD,MI"><span class="radio-dot"></span><span class="option-letter">D</span><span class="option-text">Très peu — l'organisation est organique, les règles émergent de la pratique et de la culture</span></label>
+  </div>
+</div>
+
+<!-- bloc 2 -->
+<div class="dim-header">
+  <div class="accent-bar"></div>
+  <div class="dim-meta">
+    <div class="dim-num">Axe 02 — Partie dominante de l'organisation</div>
+    <div class="dim-title">Qui détient réellement le pouvoir ?</div>
+    <div class="dim-theory">Mintzberg : chaque configuration est tirée par l'une des 6 parties — sommet, technostructure, ligne hiérarchique, centre opérationnel, fonctions de support, idéologie</div>
+  </div>
+</div>
+
+<div class="question-card" data-q="3">
+  <div class="q-header"><span class="q-num">Q.04</span>
+    <div>
+      <div class="q-dimension">Partie dominante</div>
+      <div class="q-text">Quelle partie de votre organisation exerce le plus d'influence sur le fonctionnement quotidien ?</div>
+    </div>
+  </div>
+  <div class="options">
+    <label class="option"><input type="radio" name="q3" value="SE"><span class="radio-dot"></span><span class="option-letter">A</span><span class="option-text">Le dirigeant ou fondateur — les décisions majeures partent toutes du sommet stratégique</span></label>
+    <label class="option"><input type="radio" name="q3" value="BM"><span class="radio-dot"></span><span class="option-letter">B</span><span class="option-text">Les experts en méthodes, normes et contrôle (qualité, RH analytique, contrôle de gestion…) — la technostructure</span></label>
+    <label class="option"><input type="radio" name="q3" value="DO"><span class="radio-dot"></span><span class="option-letter">C</span><span class="option-text">Les directeurs de division ou responsables d'unités autonomes — la ligne hiérarchique intermédiaire</span></label>
+    <label class="option"><input type="radio" name="q3" value="BP"><span class="radio-dot"></span><span class="option-letter">D</span><span class="option-text">Les professionnels experts du cœur de métier (médecins, avocats, enseignants…) — le centre opérationnel</span></label>
+    <label class="option"><input type="radio" name="q3" value="AD"><span class="radio-dot"></span><span class="option-letter">E</span><span class="option-text">Les équipes projets et fonctions support spécialisées travaillant en mode transversal</span></label>
+    <label class="option"><input type="radio" name="q3" value="MI"><span class="radio-dot"></span><span class="option-letter">F</span><span class="option-text">La culture, la mission et les valeurs partagées par l'ensemble des membres</span></label>
+  </div>
+</div>
+
+<div class="question-card" data-q="4">
+  <div class="q-header"><span class="q-num">Q.05</span>
+    <div>
+      <div class="q-dimension">Centralisation du pouvoir décisionnel</div>
+      <div class="q-text">Comment les décisions importantes sont-elles prises dans votre organisation ?</div>
+    </div>
+  </div>
+  <div class="options">
+    <label class="option"><input type="radio" name="q4" value="SE"><span class="radio-dot"></span><span class="option-letter">A</span><span class="option-text">Centralisées au sommet — le dirigeant décide de tout ou presque, très peu de délégation</span></label>
+    <label class="option"><input type="radio" name="q4" value="BM"><span class="radio-dot"></span><span class="option-letter">B</span><span class="option-text">Orientées par la technostructure — les experts définissent les standards qui encadrent toutes les décisions</span></label>
+    <label class="option"><input type="radio" name="q4" value="DO"><span class="radio-dot"></span><span class="option-letter">C</span><span class="option-text">Décentralisées par division — chaque unité est autonome dans un cadre défini par le siège</span></label>
+    <label class="option"><input type="radio" name="q4" value="BP"><span class="radio-dot"></span><span class="option-letter">D</span><span class="option-text">Déléguées aux professionnels — les experts du terrain disposent d'une large autonomie de jugement</span></label>
+    <label class="option"><input type="radio" name="q4" value="AD,MI"><span class="radio-dot"></span><span class="option-letter">E</span><span class="option-text">Distribuées — décisions prises collectivement par les équipes, de façon organique et négociée</span></label>
+  </div>
+</div>
+
+<!-- bloc 3 -->
+<div class="dim-header">
+  <div class="accent-bar"></div>
+  <div class="dim-meta">
+    <div class="dim-num">Axe 03 — Environnement et facteurs de contingence</div>
+    <div class="dim-title">Dans quel contexte évolue votre organisation ?</div>
+    <div class="dim-theory">Mintzberg : taille, âge, stabilité et complexité de l'environnement conditionnent la configuration</div>
+  </div>
+</div>
+
+<div class="question-card" data-q="5">
+  <div class="q-header"><span class="q-num">Q.06</span>
+    <div>
+      <div class="q-dimension">Stabilité et complexité de l'environnement</div>
+      <div class="q-text">Comment décririez-vous l'environnement dans lequel évolue votre organisation ?</div>
+    </div>
+  </div>
+  <div class="options">
+    <label class="option"><input type="radio" name="q5" value="BM"><span class="radio-dot"></span><span class="option-letter">A</span><span class="option-text">Stable et simple — tâches prévisibles et répétitives, secteur qui change peu</span></label>
+    <label class="option"><input type="radio" name="q5" value="DO,BP"><span class="radio-dot"></span><span class="option-letter">B</span><span class="option-text">Stable mais complexe — secteur établi requérant une expertise pointue ou une gestion multi-marchés</span></label>
+    <label class="option"><input type="radio" name="q5" value="AD"><span class="radio-dot"></span><span class="option-letter">C</span><span class="option-text">Dynamique et complexe — innovation permanente, environnement instable nécessitant une forte adaptation</span></label>
+    <label class="option"><input type="radio" name="q5" value="SE,MI"><span class="radio-dot"></span><span class="option-letter">D</span><span class="option-text">Variable et imprévisible — l'organisation réagit au coup par coup, parfois en mode crise ou conviction</span></label>
+  </div>
+</div>
+
+<div class="question-card" data-q="6">
+  <div class="q-header"><span class="q-num">Q.07</span>
+    <div>
+      <div class="q-dimension">Taille, âge et maturité</div>
+      <div class="q-text">Comment situeriez-vous votre organisation en termes de taille et de maturité structurelle ?</div>
+    </div>
+  </div>
+  <div class="options">
+    <label class="option"><input type="radio" name="q6" value="SE"><span class="radio-dot"></span><span class="option-letter">A</span><span class="option-text">Petite et jeune — structure légère, peu formalisée, encore en construction autour de son fondateur</span></label>
+    <label class="option"><input type="radio" name="q6" value="BM"><span class="radio-dot"></span><span class="option-letter">B</span><span class="option-text">Grande et ancienne — organisation mature avec une bureaucratie développée et des procédures très établies</span></label>
+    <label class="option"><input type="radio" name="q6" value="DO"><span class="radio-dot"></span><span class="option-letter">C</span><span class="option-text">Grande et diversifiée — groupe multi-activités ou multinationale structuré en divisions autonomes</span></label>
+    <label class="option"><input type="radio" name="q6" value="BP,AD"><span class="radio-dot"></span><span class="option-letter">D</span><span class="option-text">Taille variable, fondée sur l'expertise — la qualification des membres prime sur la taille</span></label>
+    <label class="option"><input type="radio" name="q6" value="MI"><span class="radio-dot"></span><span class="option-letter">E</span><span class="option-text">Modeste, fortement unie par une mission ou des valeurs qui font sa raison d'être</span></label>
+  </div>
+</div>
+
+<!-- bloc 4 -->
+<div class="dim-header">
+  <div class="accent-bar"></div>
+  <div class="dim-meta">
+    <div class="dim-num">Axe 04 — Division du travail et structure des unités</div>
+    <div class="dim-title">Comment le travail est-il découpé et organisé ?</div>
+    <div class="dim-theory">Mintzberg : la spécialisation horizontale et verticale ainsi que le regroupement des unités caractérisent chaque configuration</div>
+  </div>
+</div>
+
+<div class="question-card" data-q="7">
+  <div class="q-header"><span class="q-num">Q.08</span>
+    <div>
+      <div class="q-dimension">Structure des unités et autonomie</div>
+      <div class="q-text">Comment votre organisation est-elle découpée en unités, et quel niveau d'autonomie ces unités ont-elles ?</div>
+    </div>
+  </div>
+  <div class="options">
+    <label class="option"><input type="radio" name="q7" value="SE,BM"><span class="radio-dot"></span><span class="option-letter">A</span><span class="option-text">Une structure centralisée unique — pas de vraies sous-unités autonomes, tout converge vers le centre</span></label>
+    <label class="option"><input type="radio" name="q7" value="BM"><span class="radio-dot"></span><span class="option-letter">B</span><span class="option-text">Des services fonctionnels standardisés — chaque département exécute un type de tâche défini par la technostructure</span></label>
+    <label class="option"><input type="radio" name="q7" value="DO"><span class="radio-dot"></span><span class="option-letter">C</span><span class="option-text">Des divisions autonomes — chaque unité opère sur son marché avec sa propre mini-structure interne</span></label>
+    <label class="option"><input type="radio" name="q7" value="BP"><span class="radio-dot"></span><span class="option-letter">D</span><span class="option-text">Des pôles par spécialité professionnelle — regroupement par expertise et discipline de métier</span></label>
+    <label class="option"><input type="radio" name="q7" value="AD,MI"><span class="radio-dot"></span><span class="option-letter">E</span><span class="option-text">Des équipes projets fluides — regroupements temporaires selon les besoins, sans structure figée</span></label>
+  </div>
+</div>
+
+<!-- bloc 5-->
+<div class="dim-header">
+  <div class="accent-bar"></div>
+  <div class="dim-meta">
+    <div class="dim-num">Axe 05 — Culture, idéologie et identité</div>
+    <div class="dim-title">Qu'est-ce qui unit les membres de votre organisation ?</div>
+    <div class="dim-theory">Mintzberg (1989) : l'idéologie est la 6e composante (elle peut devenir le mécanisme dominant dans l'organisation missionnaire)</div>
+  </div>
+</div>
+
+<div class="question-card" data-q="8">
+  <div class="q-header"><span class="q-num">Q.09</span>
+    <div>
+      <div class="q-dimension">Identité et cohésion</div>
+      <div class="q-text">Quelle phrase décrit le mieux ce qui unit les membres de votre organisation ?</div>
+    </div>
+  </div>
+  <div class="options">
+    <label class="option"><input type="radio" name="q8" value="SE"><span class="radio-dot"></span><span class="option-letter">A</span><span class="option-text">La vision du dirigeant — l'organisation lui ressemble, sa présence est le moteur central</span></label>
+    <label class="option"><input type="radio" name="q8" value="BM"><span class="radio-dot"></span><span class="option-letter">B</span><span class="option-text">Des règles et systèmes de contrôle rigoureux — la rigueur et la conformité sont les valeurs centrales</span></label>
+    <label class="option"><input type="radio" name="q8" value="BP"><span class="radio-dot"></span><span class="option-letter">C</span><span class="option-text">L'appartenance à une communauté professionnelle — l'identité est d'abord celle du métier ou de la discipline</span></label>
+    <label class="option"><input type="radio" name="q8" value="DO"><span class="radio-dot"></span><span class="option-letter">D</span><span class="option-text">La performance économique de leur division — chacun joue pour son entité dans un cadre d'objectifs</span></label>
+    <label class="option"><input type="radio" name="q8" value="AD"><span class="radio-dot"></span><span class="option-letter">E</span><span class="option-text">L'innovation et l'adaptabilité — la créativité et l'expérimentation sont valorisées avant tout</span></label>
+    <label class="option"><input type="radio" name="q8" value="MI"><span class="radio-dot"></span><span class="option-letter">F</span><span class="option-text">Une mission, une cause ou des valeurs fortes — l'idéologie est le cœur de l'identité collective</span></label>
+  </div>
+</div>
+
+<!-- bloc 6 -->
+<div class="dim-header">
+  <div class="accent-bar"></div>
+  <div class="dim-meta">
+    <div class="dim-num">Axe 06 — Tensions, exemples et perception globale</div>
+    <div class="dim-title">Affiner le diagnostic</div>
+    <div class="dim-theory">Ces 3 questions croisent les signaux faibles pour distinguer les configurations proches (ex. SE vs BM, BP vs AD)</div>
+  </div>
+</div>
+
+<div class="question-card" data-q="9">
+  <div class="q-header"><span class="q-num">Q.10</span>
+    <div>
+      <div class="q-dimension">Tension organisationnelle principale</div>
+      <div class="q-text">Quelle tension ressentez-vous le plus fréquemment dans votre organisation ?</div>
+    </div>
+  </div>
+  <div class="options">
+    <label class="option"><input type="radio" name="q9" value="SE"><span class="radio-dot"></span><span class="option-letter">A</span><span class="option-text">Dépendance excessive au dirigeant — l'organisation est fragile sans lui</span></label>
+    <label class="option"><input type="radio" name="q9" value="BM"><span class="radio-dot"></span><span class="option-letter">B</span><span class="option-text">Rigidité et lenteur — les procédures freinent la réactivité et l'adaptation</span></label>
+    <label class="option"><input type="radio" name="q9" value="DO"><span class="radio-dot"></span><span class="option-letter">C</span><span class="option-text">Incohérence globale — les divisions tirent dans des directions différentes, peu de synergie</span></label>
+    <label class="option"><input type="radio" name="q9" value="BP"><span class="radio-dot"></span><span class="option-letter">D</span><span class="option-text">Corporatisme — les professionnels défendent leur autonomie au détriment des objectifs communs</span></label>
+    <label class="option"><input type="radio" name="q9" value="AD"><span class="radio-dot"></span><span class="option-letter">E</span><span class="option-text">Ambiguïté des rôles — les équipes projets créent de la confusion sur les responsabilités</span></label>
+    <label class="option"><input type="radio" name="q9" value="MI"><span class="radio-dot"></span><span class="option-letter">F</span><span class="option-text">Fermeture — la culture forte rend difficile l'intégration de nouvelles idées ou personnes</span></label>
+  </div>
+</div>
+
+<div class="question-card" data-q="10">
+  <div class="q-header"><span class="q-num">Q.11</span>
+    <div>
+      <div class="q-dimension">Exemples sectoriels</div>
+      <div class="q-text">Quel type d'organisation ressemble le plus à la vôtre ?</div>
+    </div>
+  </div>
+  <div class="options">
+    <label class="option"><input type="radio" name="q10" value="SE"><span class="radio-dot"></span><span class="option-letter">A</span><span class="option-text">Une startup, TPE ou entreprise familiale où le fondateur est central et omniprésent</span></label>
+    <label class="option"><input type="radio" name="q10" value="BM"><span class="radio-dot"></span><span class="option-letter">B</span><span class="option-text">Une grande administration, une usine de production de masse ou une chaîne de restauration rapide</span></label>
+    <label class="option"><input type="radio" name="q10" value="BP"><span class="radio-dot"></span><span class="option-letter">C</span><span class="option-text">Un hôpital, un cabinet d'avocats, une université ou un cabinet d'expertise comptable</span></label>
+    <label class="option"><input type="radio" name="q10" value="DO"><span class="radio-dot"></span><span class="option-letter">D</span><span class="option-text">Un grand groupe diversifié type Nestlé, LVMH ou une multinationale à plusieurs branches autonomes</span></label>
+    <label class="option"><input type="radio" name="q10" value="AD"><span class="radio-dot"></span><span class="option-letter">E</span><span class="option-text">Une agence créative, un laboratoire de R&D, une société de conseil ou une entreprise tech innovante</span></label>
+    <label class="option"><input type="radio" name="q10" value="MI"><span class="radio-dot"></span><span class="option-letter">F</span><span class="option-text">Une ONG, une coopérative, un mouvement associatif ou une organisation à forte vocation sociale</span></label>
+  </div>
+</div>
+
+<div class="question-card" data-q="11">
+  <div class="q-header"><span class="q-num">Q.12</span>
+    <div>
+      <div class="q-dimension">Perception globale</div>
+      <div class="q-text">Si vous deviez résumer le fonctionnement de votre organisation en une phrase, laquelle choisiriez-vous ?</div>
+    </div>
+  </div>
+  <div class="options">
+    <label class="option"><input type="radio" name="q11" value="SE"><span class="radio-dot"></span><span class="option-letter">A</span><span class="option-text">"Ici, tout passe par le patron — sa vision donne le cap et sa présence fait tourner la machine."</span></label>
+    <label class="option"><input type="radio" name="q11" value="BM"><span class="radio-dot"></span><span class="option-letter">B</span><span class="option-text">"Nous avons une procédure pour tout — la rigueur et la standardisation sont nos forces."</span></label>
+    <label class="option"><input type="radio" name="q11" value="BP"><span class="radio-dot"></span><span class="option-letter">C</span><span class="option-text">"Les experts sont maîtres de leur art — on leur fait confiance pour faire ce qu'ils savent faire."</span></label>
+    <label class="option"><input type="radio" name="q11" value="DO"><span class="radio-dot"></span><span class="option-letter">D</span><span class="option-text">"Chaque division vit sa vie dans son périmètre — le siège fixe les objectifs, les unités exécutent."</span></label>
+    <label class="option"><input type="radio" name="q11" value="AD"><span class="radio-dot"></span><span class="option-letter">E</span><span class="option-text">"Nous nous réinventons à chaque projet — l'improvisation et l'expertise se mêlent pour innover."</span></label>
+    <label class="option"><input type="radio" name="q11" value="MI"><span class="radio-dot"></span><span class="option-letter">F</span><span class="option-text">"Ce qui nous unit, c'est notre mission — les règles passent après les convictions."</span></label>
+  </div>
+</div>
+
+<div id="submit-wrap">
+  <button id="submit-btn" disabled onclick="showResult()">Obtenir le diagnostic</button>
+  <p id="submit-note">Veuillez répondre aux 11 questions pour obtenir votre résultat.</p>
+</div>
+</div>
+
+<!-- résultats -->
+<div id="result-section">
+  <div class="result-masthead">
+    <div class="result-eyebrow">Configuration Mintzberg identifiée</div>
+    <div class="result-config-name" id="result-name">—</div>
+    <div class="result-mechanism">Mécanisme dominant : <span id="result-mechanism">—</span></div>
+    <div class="result-desc" id="result-desc">—</div>
+  </div>
+  <div class="theory-recap" id="theory-recap"></div>
+  <div class="panel">
+    <div class="panel-header">Scores par configuration — classement Mintzberg</div>
+    <div id="scores-list"></div>
+  </div>
+  <div class="panel" style="margin-bottom:14px;">
+    <div class="panel-header">Profil radar — 6 configurations Mintzberg</div>
+    <div style="padding:20px 0;" id="radar-chart"></div>
+  </div>
+  <div class="detail-grid" id="detail-grid"></div>
+  <button id="reset-btn" onclick="resetQuiz()">Recommencer le questionnaire</button>
+  <button id="print-btn" onclick="window.print()">Exporter en PDF / Imprimer</button>
+</div>
+</main>
+
+<script>
+const CONFIGS = {
+  SE: {
+    name: "Structure Simple (Organisation Entrepreneuriale)",
+    mechanism: "Supervision directe",
+    part: "Sommet stratégique",
+    env: "Simple et dynamique — petite structure jeune",
+    desc: "Votre organisation est dominée par son dirigeant qui exerce une supervision directe sur l'ensemble des membres. La structure est organique, peu formalisée, très réactive mais fragile car tout dépend d'une seule personne. C'est la configuration typique des startups, PME récentes et organisations en situation de crise.",
+    forces: ["Réactivité et flexibilité maximales", "Décisions rapides au sommet", "Forte capacité d'adaptation situationnelle"],
+    limites: ["Dépendance critique au dirigeant", "Non scalable avec la croissance", "Absence de mémoire organisationnelle formalisée"],
+    exemples: ["Startup en phase de lancement", "TPE ou entreprise familiale", "Organisation en situation de crise"]
+  },
+  BM: {
+    name: "Bureaucratie Mécaniste",
+    mechanism: "Standardisation des procédés de travail",
+    part: "Technostructure",
+    env: "Simple et stable — grand volume de tâches répétitives",
+    desc: "Votre organisation repose sur une standardisation poussée des tâches, définie par une technostructure puissante. Les procédures gouvernent le travail opérationnel. C'est une structure efficace dans des environnements stables mais peu adaptée au changement rapide.",
+    forces: ["Efficacité opérationnelle maximale", "Cohérence et contrôle à grande échelle", "Coûts optimisés par la standardisation"],
+    limites: ["Rigidité et lenteur d'adaptation", "Désengagement des opérateurs", "Résistance forte au changement"],
+    exemples: ["Grande administration publique", "Usine de production de masse", "Chaîne de restauration rapide"]
+  },
+  BP: {
+    name: "Bureaucratie Professionnelle",
+    mechanism: "Standardisation des qualifications",
+    part: "Centre opérationnel (professionnels)",
+    env: "Stable mais complexe — expertise élevée requise",
+    desc: "Votre organisation repose sur des professionnels hautement qualifiés dont la formation garantit la cohérence du travail. L'autonomie des experts est forte, la hiérarchie plate. La coordination se fait par le partage de standards professionnels acquis lors de la formation.",
+    forces: ["Haute qualité d'expertise", "Fort niveau d'autonomie professionnelle", "Coordination efficace par les normes du métier"],
+    limites: ["Corporatisme des professionnels", "Difficultés à imposer un changement aux experts", "Coordination inter-spécialités complexe"],
+    exemples: ["Hôpital ou clinique", "Cabinet d'avocats ou d'experts-comptables", "Université ou école de recherche"]
+  },
+  DO: {
+    name: "Structure Divisionnalisée",
+    mechanism: "Standardisation des résultats",
+    part: "Ligne hiérarchique intermédiaire",
+    env: "Simple et stable — marché diversifié, grande taille",
+    desc: "Votre organisation est structurée en divisions autonomes qui opèrent comme des quasi-entreprises. Le siège définit les objectifs de résultats et contrôle la performance, laissant aux divisions une large liberté d'organisation interne.",
+    forces: ["Autonomie et responsabilisation des divisions", "Adaptation locale à chaque marché", "Clarté de la performance par entité"],
+    limites: ["Doublons coûteux entre divisions", "Risque de divergence stratégique", "Coordination inter-divisions difficile"],
+    exemples: ["Multinationale (Nestlé, LVMH…)", "Conglomérat multi-activités", "Grand groupe diversifié géographiquement"]
+  },
+  AD: {
+    name: "Adhocratie (Organisation Innovatrice)",
+    mechanism: "Ajustement mutuel",
+    part: "Fonctionnels de support + Centre opérationnel expert",
+    env: "Complexe et dynamique — innovation permanente",
+    desc: "Votre organisation est conçue pour innover en permanence. Des experts de disciplines différentes collaborent en équipes projets fluides, s'ajustant mutuellement. C'est la configuration la plus organique, adaptée aux environnements instables et créatifs.",
+    forces: ["Innovation et créativité maximales", "Grande réactivité à l'environnement", "Mobilisation rapide des expertises transversales"],
+    limites: ["Ambiguïté des rôles et responsabilités", "Coordination coûteuse en temps", "Difficultés à industrialiser ou répliquer"],
+    exemples: ["Agence créative ou de communication", "Laboratoire de R&D", "Société de conseil stratégique ou entreprise tech"]
+  },
+  MI: {
+    name: "Organisation Missionnaire (Idéologique)",
+    mechanism: "Standardisation des normes (idéologie)",
+    part: "Idéologie et culture organisationnelle",
+    env: "Variable — organisation portée par une mission forte",
+    desc: "Votre organisation est soudée par une idéologie ou des valeurs si fortes qu'elles constituent le principal mécanisme de coordination. Les membres adhèrent profondément à la cause commune.",
+    forces: ["Engagement et motivation intrinsèques très élevés", "Cohésion forte sans contrôle formel", "Identité organisationnelle puissante"],
+    limites: ["Fermeture aux idées extérieures", "Risque de dérive idéologique", "Difficulté de croissance et de professionnalisation"],
+    exemples: ["ONG ou association caritative", "Coopérative à forte identité", "Communauté ou mouvement militant"]
+  }
+};
+
+const order = ["SE","BM","BP","DO","AD","MI"];
+let answered = 0;
+const TOTAL = 11;
+
+document.querySelectorAll('.option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    const input = opt.querySelector('input');
+    const name = input.name;
+    document.querySelectorAll(`input[name="${name}"]`).forEach(i => i.closest('.option').classList.remove('selected'));
+    input.checked = true;
+    opt.classList.add('selected');
+    const card = opt.closest('.question-card');
+    const was = card.classList.contains('answered');
+    card.classList.add('answered');
+    if (!was) answered++;
+    updateProgress();
+  });
+});
+
+// Pré-remplissage et verrouillage du champ entreprise via ?org=
+const orgParam = new URLSearchParams(window.location.search).get('org');
+if (orgParam) {
+  const nameInput = document.getElementById('company-name');
+  nameInput.value = orgParam;
+  nameInput.readOnly = true;
+  nameInput.style.background = '#f0f4ff';
+  nameInput.style.color = '#555';
+  nameInput.style.cursor = 'not-allowed';
+}
+
+document.getElementById('company-name').addEventListener('input', updateProgress);
+document.getElementById('company-size').addEventListener('change', updateProgress);
+updateProgress();
+
+function updateProgress() {
+  const companyFilled = document.getElementById('company-name').value.trim().length > 0;
+  const sizeFilled = document.getElementById('company-size').value !== '';
+  const pct = Math.round((answered / TOTAL) * 100);
+  document.getElementById('progress-label').textContent = `${answered} / ${TOTAL} réponses`;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + ' %';
+  document.getElementById('submit-btn').disabled = answered < TOTAL || !companyFilled || !sizeFilled;
+  if (answered === TOTAL && (!companyFilled || !sizeFilled)) {
+    document.getElementById('submit-note').textContent = 'Veuillez renseigner le nom et la taille de l\'entreprise pour soumettre.';
+  } else if (answered === TOTAL) {
+    document.getElementById('submit-note').textContent = 'Toutes les questions sont renseignées.';
+  }
+}
+
+function computeScores() {
+  const scores = {};
+  order.forEach(k => scores[k] = 0);
+  const WEIGHTS = { q1:1, q2:1, q3:1, q4:1, q5:1, q6:1, q7:1, q8:1, q9:1.5, q10:1.5, q11:2 };
+  document.querySelectorAll('input[type="radio"]:checked').forEach(input => {
+    const vals = input.value.split(',');
+    const w = (WEIGHTS[input.name] || 1) / vals.length;
+    vals.forEach(v => {
+      if (scores[v] !== undefined) scores[v] += w;
+      else console.warn(`Valeur de réponse non reconnue : "${v}" (question : ${input.name})`);
+    });
+  });
+  return scores;
+}
+
+function showResult() {
+  const scores = computeScores();
+  const sorted = order.slice().sort((a, b) => scores[b] - scores[a] || order.indexOf(a) - order.indexOf(b));
+  const winner = sorted[0];
+  const runnerUp = sorted[1];
+  const maxScore = scores[winner];
+  const gap = parseFloat((scores[winner] - scores[runnerUp]).toFixed(2));
+  const gapPct = maxScore > 0 ? Math.round((gap / maxScore) * 100) : 0;
+  const cfg = CONFIGS[winner];
+
+  document.getElementById('result-name').textContent = cfg.name;
+  document.getElementById('result-mechanism').textContent = cfg.mechanism;
+  document.getElementById('result-desc').textContent = cfg.desc;
+
+  document.getElementById('theory-recap').innerHTML = `
+    <div class="theory-item"><div class="t-label">Mécanisme dominant</div><div class="t-value"><span>${cfg.mechanism}</span></div></div>
+    <div class="theory-item"><div class="t-label">Partie clé</div><div class="t-value">${cfg.part}</div></div>
+    <div class="theory-item"><div class="t-label">Contexte typique</div><div class="t-value">${cfg.env}</div></div>
+    <div class="theory-item"><div class="t-label">2ème configuration</div><div class="t-value">${CONFIGS[runnerUp].name} <span style="color:#888;font-weight:400;font-size:12px;">(écart ${gapPct}%${gapPct <= 20 ? ' — profil hybride' : ''})</span></div></div>`;
+
+  const list = document.getElementById('scores-list');
+  list.innerHTML = '';
+  sorted.forEach(key => {
+    const pct = maxScore > 0 ? Math.round((scores[key] / maxScore) * 100) : 0;
+    const row = document.createElement('div');
+    row.className = 'score-row' + (key === winner ? ' top' : '');
+    row.innerHTML = `
+      <span class="score-name">${CONFIGS[key].name}</span>
+      <div class="score-bar-track"><div class="score-bar-fill" style="width:0%" data-pct="${pct}"></div></div>
+      <span class="score-pct">${pct}%</span>`;
+    list.appendChild(row);
+  });
+  setTimeout(() => { document.querySelectorAll('.score-bar-fill').forEach(b => { b.style.width = b.dataset.pct + '%'; }); }, 80);
+
+  const recos = {
+    SE: ["Préparer la transition vers une structure plus formelle dès la croissance", "Former des managers intermédiaires pour décentraliser progressivement", "Documenter les processus clés avant qu'ils ne reposent que sur des personnes"],
+    BM: ["Identifier les processus nécessitant plus de flexibilité", "Créer des espaces d'innovation protégés des procédures standard", "Investir dans la formation des managers de proximité"],
+    BP: ["Renforcer la coordination inter-spécialités (mécanismes de liaison)", "Créer des instances de gouvernance partagées entre professionnels", "Travailler sur l'adhésion au projet organisationnel au-delà du métier"],
+    DO: ["Définir clairement le périmètre d'autonomie de chaque division", "Renforcer les synergies inter-divisions sans brider leur autonomie", "Mettre en place une gouvernance transversale pour les ressources partagées"],
+    AD: ["Clarifier les rôles et responsabilités dans les équipes projets", "Investir dans des outils collaboratifs robustes", "Capitaliser les connaissances issues des projets pour ne pas repartir de zéro"],
+    MI: ["Veiller à ne pas fermer l'organisation aux apports extérieurs", "Professionnaliser la gouvernance pour accompagner la croissance", "Distinguer la mission (stable) des pratiques organisationnelles (évolutives)"]
+  };
+
+  document.getElementById('detail-grid').innerHTML = `
+    <div class="detail-panel"><h4>Forces identifiées</h4><ul>${cfg.forces.map(f=>`<li>${f}</li>`).join('')}</ul></div>
+    <div class="detail-panel"><h4>Limites à anticiper</h4><ul>${cfg.limites.map(l=>`<li>${l}</li>`).join('')}</ul></div>
+    <div class="detail-panel"><h4>Exemples typiques</h4><ul>${cfg.exemples.map(e=>`<li>${e}</li>`).join('')}</ul></div>
+    <div class="detail-panel"><h4>Recommandations managériales</h4><ul>${recos[winner].map(r=>`<li>${r}</li>`).join('')}</ul></div>`;
+
+  document.getElementById('radar-chart').innerHTML = drawRadar(scores);
+  document.getElementById('quiz-section').style.display = 'none';
+  document.getElementById('progress-bar-wrap').style.display = 'none';
+  document.getElementById('result-section').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  const answers = {};
+  document.querySelectorAll('input[type="radio"]:checked').forEach(input => {
+    answers[input.name] = input.value;
+  });
+
+  fetch('/api/submit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      company_name: document.getElementById('company-name').value.trim(),
+      company_size: document.getElementById('company-size').value,
+      answers,
+      scores,
+      winner,
+      runner_up: runnerUp,
+      gap,
+    }),
+  }).then(res => {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  }).catch(err => {
+    console.error('Erreur lors de la sauvegarde :', err);
+    const notice = document.createElement('p');
+    notice.style.cssText = 'color:#c00;font-size:13px;text-align:center;margin-top:16px;';
+    notice.textContent = 'Attention : la sauvegarde des résultats a échoué. Veuillez contacter l\'administrateur.';
+    document.getElementById('result-section').appendChild(notice);
+  });
+}
+
+function drawRadar(scores) {
+  const keys  = ['SE','BM','DO','MI','AD','BP'];
+  const names = ['Entrepreneuriale','Mécaniste','Divisionnalisée','Missionnaire','Adhocratie','Professionnelle'];
+  const N = 6, cx = 150, cy = 150, R = 95, MAX = 11;
+  const ang  = i => (2 * Math.PI * i / N) - Math.PI / 2;
+  const pt   = (i, r) => [cx + r * Math.cos(ang(i)), cy + r * Math.sin(ang(i))];
+  const poly = r => keys.map((_,i) => pt(i,r).map(v=>v.toFixed(1)).join(',')).join(' ');
+  const grids = [0.25,0.5,0.75,1].map(v =>
+    `<polygon points="${poly(R*v)}" fill="none" stroke="#ebebeb" stroke-width="1"/>`
+  ).join('');
+  const axes = keys.map((_,i) => {
+    const [x2,y2] = pt(i,R);
+    return `<line x1="${cx}" y1="${cy}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#ebebeb" stroke-width="1"/>`;
+  }).join('');
+  const dataPts = keys.map((k,i) => {
+    const r = R * Math.min((scores[k]||0) / MAX, 1);
+    return pt(i,r).map(v=>v.toFixed(1)).join(',');
+  }).join(' ');
+  const dots = keys.map((k,i) => {
+    const r = R * Math.min((scores[k]||0) / MAX, 1);
+    const [px,py] = pt(i,r);
+    return `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="4" fill="#3b82f6" stroke="#fff" stroke-width="1.5"/>`;
+  }).join('');
+  const labelR = R + 26;
+  const labels = names.map((name,i) => {
+    const [lx,ly] = pt(i,labelR);
+    const anchor = lx < cx - 8 ? 'end' : lx > cx + 8 ? 'start' : 'middle';
+    return `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${anchor}" dominant-baseline="middle" font-size="10" fill="#555" font-family="system-ui,sans-serif">${name}</text>`;
+  }).join('');
+  return `<svg viewBox="0 0 300 300" width="100%" style="max-width:280px;display:block;margin:0 auto;">${grids}${axes}<polygon points="${dataPts}" fill="rgba(59,130,246,0.15)" stroke="#3b82f6" stroke-width="2"/>${dots}${labels}</svg>`;
+}
+
+// nom de l'entreprise préremplie à partir de ?org= paramètre URL
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  const org = params.get('org');
+  if (org) {
+    const field = document.getElementById('company-name');
+    field.value = decodeURIComponent(org);
+    field.readOnly = true;
+    field.style.background = '#f0f4ff';
+    field.style.color = '#555';
+    field.title = 'Organisation fixée par le lien partagé';
+    updateProgress();
+  }
+})();
+
+function resetQuiz() {
+  if (!confirm('Recommencer le questionnaire ? Vos réponses actuelles seront perdues.')) return;
+  answered = 0;
+  document.querySelectorAll('input[type="radio"]').forEach(i => i.checked = false);
+  document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+  document.querySelectorAll('.question-card').forEach(c => c.classList.remove('answered'));
+  const params = new URLSearchParams(window.location.search);
+  const org = params.get('org');
+  const nameField = document.getElementById('company-name');
+  nameField.value = org ? decodeURIComponent(org) : '';
+  document.getElementById('company-size').value = '';
+  document.getElementById('submit-btn').disabled = true;
+  document.getElementById('submit-note').textContent = 'Veuillez répondre aux 11 questions pour obtenir votre résultat.';
+  updateProgress();
+  document.getElementById('result-section').style.display = 'none';
+  document.getElementById('quiz-section').style.display = 'block';
+  document.getElementById('progress-bar-wrap').style.display = 'flex';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
