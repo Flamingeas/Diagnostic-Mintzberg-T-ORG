@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Tableau de bord — Diagnostic Mintzberg</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --dark:   #252423;
+      --blue:   #118DFF;
+      --green:  #00B294;
+      --yellow: #F2C80F;
+      --purple: #8B00FF;
+      --orange: #E8A237;
+      --bg:     #F3F2F1;
+      --card:   #FFFFFF;
+      --border: #E1DFDD;
+      --text:   #252423;
+      --muted:  #605E5C;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      background: var(--dark);
+      color: #fff;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      box-shadow: 0 2px 8px rgba(0,0,0,.35);
+    }
+    .topbar-logo { display: flex; align-items: center; gap: 8px; }
+    .topbar-title { font-size: 13px; font-weight: 700; color: #fff; letter-spacing: .01em; }
+    .topbar-sep { width: 1px; height: 20px; background: #4a4948; margin: 0 4px; }
+    .topbar-report { font-size: 12px; color: #a8a6a3; }
+    .topbar-actions { margin-left: auto; display: flex; gap: 4px; }
+    .topbar-btn {
+      background: transparent;
+      border: none;
+      color: #a8a6a3;
+      cursor: pointer;
+      padding: 5px 10px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      text-decoration: none;
+      transition: background .15s, color .15s;
+    }
+    .topbar-btn:hover { background: rgba(255,255,255,.1); color: #fff; }
+
+    .filterbar {
+      background: #fff;
+      border-bottom: 2px solid var(--border);
+      padding: 8px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .filterbar-label {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      white-space: nowrap;
+    }
+    .filter-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chip {
+      font-size: 12px;
+      padding: 3px 12px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .chip:hover { border-color: var(--blue); color: var(--blue); }
+    .chip.active { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 600; }
+
+    .page { padding: 16px 20px 48px; }
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      margin-bottom: 10px;
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .section-label:first-child { margin-top: 0; }
+
+    /*KPIs*/
+    .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 16px 18px 14px;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .kpi-card.blue::before   { background: var(--blue); }
+    .kpi-card.green::before  { background: var(--green); }
+    .kpi-card.yellow::before { background: var(--yellow); }
+    .kpi-card.purple::before { background: var(--purple); }
+    .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+    .kpi-val { font-size: 34px; font-weight: 300; color: var(--text); line-height: 1; margin-bottom: 6px; }
+    .kpi-sub { font-size: 11px; color: var(--muted); }
+
+    .charts-row { display: grid; grid-template-columns: 300px 1fr; gap: 12px; }
+    .chart-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 16px 18px;
+    }
+    .chart-card-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .chart-card-sub { font-size: 11px; color: var(--muted); margin-bottom: 14px; }
+    .chart-wrap { position: relative; }
+
+    .company-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 12px; }
+    .company-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .company-card-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .company-card-name { font-size: 14px; font-weight: 700; }
+    .company-card-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .config-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+    .company-card-body { padding: 14px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .panel-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .score-bar-row { display: grid; grid-template-columns: 88px 1fr 28px; align-items: center; gap: 8px; padding: 3px 0; }
+    .score-bar-name { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar-track { height: 6px; background: #EDEBE9; border-radius: 3px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 3px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+    .score-bar-val { font-size: 11px; font-weight: 700; color: var(--muted); text-align: right; }
+
+    /* soumissions */
+    .submissions-section { padding: 0 16px 14px; border-top: 1px solid var(--border); }
+    .submissions-header { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 10px 0 6px; }
+    .sub-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; flex-wrap: wrap; border-bottom: 1px solid #F3F2F1; }
+    .sub-row:last-child { border-bottom: none; }
+    .sub-date { font-size: 11px; color: #A8A6A3; }
+    .sub-scores { display: flex; gap: 4px; flex-wrap: wrap; }
+    .sub-score { font-size: 10px; background: #F3F2F1; color: var(--muted); padding: 1px 6px; border-radius: 2px; font-family: 'Consolas', 'Courier New', monospace; }
+
+    /* Loading */
+    #loading { text-align: center; padding: 80px 20px; color: var(--muted); }
+    .spinner {
+      display: inline-block;
+      width: 32px; height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin-bottom: 14px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Empty state */
+    .empty-state { text-align: center; padding: 48px; color: var(--muted); font-size: 14px; }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+      .charts-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .kpi-row { grid-template-columns: 1fr 1fr; }
+      .company-grid { grid-template-columns: 1fr; }
+      .company-card-body { grid-template-columns: 1fr; }
+      .page { padding: 12px 12px 40px; }
+    }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-logo">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <rect x="1"  y="13" width="5" height="10" rx="1" fill="#F2C80F"/>
+      <rect x="7"  y="8"  width="5" height="15" rx="1" fill="#00B294"/>
+      <rect x="13" y="3"  width="5" height="20" rx="1" fill="#118DFF"/>
+      <rect x="20" y="10" width="3" height="13" rx="1" fill="#E8A237"/>
+    </svg>
+    <span class="topbar-title">Power BI</span>
+  </div>
+  <div class="topbar-sep"></div>
+  <span class="topbar-report">Diagnostic Mintzberg — Tableau de bord</span>
+  <div class="topbar-actions">
+    <button class="topbar-btn" onclick="loadResults()" title="Actualiser">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Actualiser
+    </button>
+    <a href="/index.html" class="topbar-btn">← Questionnaire</a>
+  </div>
+</div>
+<div id="loading">
+  <div class="spinner"></div>
+  <div>Chargement des données…</div>
+</div>
+
+<!-- App -->
+<div id="app" style="display:none;">
+  <div class="filterbar">
+    <span class="filterbar-label">Entreprise :</span>
+    <div class="filter-chips" id="filter-chips"></div>
+  </div>
+  <div class="page">
+    <div class="section-label">Vue d'ensemble</div>
+    <div class="kpi-row">
+      <div class="kpi-card blue">
+        <div class="kpi-label">Soumissions totales</div>
+        <div class="kpi-val" id="kpi-total">—</div>
+        <div class="kpi-sub">réponses enregistrées</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">Entreprises</div>
+        <div class="kpi-val" id="kpi-companies">—</div>
+        <div class="kpi-sub">organisations analysées</div>
+      </div>
+      <div class="kpi-card yellow">
+        <div class="kpi-label">Configuration dominante</div>
+        <div class="kpi-val" id="kpi-dominant" style="font-size:16px;margin-top:8px;font-weight:600;">—</div>
+        <div class="kpi-sub" id="kpi-dominant-pct"></div>
+      </div>
+      <div class="kpi-card purple">
+        <div class="kpi-label">Score moyen max</div>
+        <div class="kpi-val" id="kpi-avg-score">—</div>
+        <div class="kpi-sub" id="kpi-avg-label"></div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:24px;">Analyse globale</div>
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-card-title">Répartition des configurations</div>
+        <div class="chart-card-sub">Part de chaque type organisationnel</div>
+        <div class="chart-wrap" style="height:230px;">
+          <canvas id="chart-donut"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">Scores moyens par configuration</div>
+        <div class="chart-card-sub">Moyenne agrégée de toutes les soumissions filtrées</div>
+        <div class="chart-wrap" style="height:230px;">
+          <canvas id="chart-bar-global"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label" id="companies-section-label" style="margin-top:24px;">Détail par entreprise</div>
+    <div class="company-grid" id="company-grid"></div>
+
+  </div>
+</div>
+
+<script>
+const CFG_COLORS = {
+  SE: '#F2C80F', BM: '#605E5C', BP: '#8B00FF',
+  DO: '#00B294', AD: '#118DFF', MI: '#E8A237'
+};
+const CFG_SHORT = {
+  SE: 'Simple', BM: 'Mécaniste', BP: 'Professionnelle',
+  DO: 'Divisionnalisée', AD: 'Adhocratie', MI: 'Missionnaire'
+};
+const CFG_NAMES = {
+  SE: 'Structure Simple',   BM: 'Bureaucratie Mécaniste',
+  BP: 'Bureaucratie Prof.', DO: 'Divisionnalisée',
+  AD: 'Adhocratie',         MI: 'Missionnaire'
+};
+const CFG_ORDER = ['SE','BM','BP','DO','AD','MI'];
+
+let globalData = {};
+let selectedCompany = '__all__';
+let chartDonut = null;
+let chartBarGlobal = null;
+const companyCharts = {};
+
+async function loadResults() {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('app').style.display = 'none';
+  try {
+    const res = await fetch('/api/results/data');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    globalData = await res.json();
+    render();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+  } catch(e) {
+    document.getElementById('loading').innerHTML =
+      `<div style="color:#E74C3C;font-size:14px;">Erreur de chargement : ${e.message}</div>`;
+  }
+}
+function render() {
+  const data = filteredData();
+  const companies = Object.keys(data);
+  const subs = companies.flatMap(c => data[c]);
+  const total = subs.length;
+
+  document.getElementById('kpi-total').textContent = total;
+  document.getElementById('kpi-companies').textContent = companies.length;
+  const winnerCount = {};
+  subs.forEach(s => { winnerCount[s.winner] = (winnerCount[s.winner]||0) + 1; });
+  const dominant = total > 0
+    ? CFG_ORDER.reduce((a,b) => (winnerCount[a]||0) >= (winnerCount[b]||0) ? a : b)
+    : null;
+
+  const domEl = document.getElementById('kpi-dominant');
+  if (dominant) {
+    domEl.textContent = CFG_SHORT[dominant];
+    domEl.style.color = CFG_COLORS[dominant];
+    document.getElementById('kpi-dominant-pct').textContent =
+      `${Math.round(((winnerCount[dominant]||0)/total)*100)}% des soumissions`;
+  } else {
+    domEl.textContent = '—';
+    document.getElementById('kpi-dominant-pct').textContent = '';
+  }
+
+  const avgsByConfig = {};
+  CFG_ORDER.forEach(k => {
+    avgsByConfig[k] = total > 0
+      ? +(subs.reduce((s,r) => s+(r['score_'+k]||0), 0)/total).toFixed(1)
+      : 0;
+  });
+  const topConfig = CFG_ORDER.reduce((a,b) => avgsByConfig[a] >= avgsByConfig[b] ? a : b);
+  document.getElementById('kpi-avg-score').textContent = total > 0 ? avgsByConfig[topConfig] : '—';
+  document.getElementById('kpi-avg-label').textContent = total > 0 ? `moy. ${CFG_SHORT[topConfig]}` : '';
+  renderChips();
+
+  // graphs
+  renderDonut(winnerCount, total);
+  renderBarGlobal(subs);
+  renderCompanyGrid(data);
+}
+
+function filteredData() {
+  if (selectedCompany === '__all__') return globalData;
+  if (!globalData[selectedCompany]) return {};
+  return { [selectedCompany]: globalData[selectedCompany] };
+}
+
+function renderChips() {
+  const el = document.getElementById('filter-chips');
+  el.innerHTML = '';
+  addChip(el, 'Tout', '__all__');
+  Object.keys(globalData).sort().forEach(c => addChip(el, c, c));
+}
+
+function addChip(container, label, key) {
+  const chip = document.createElement('div');
+  chip.className = 'chip' + (key === selectedCompany ? ' active' : '');
+  chip.textContent = label;
+  chip.onclick = () => {
+    selectedCompany = key;
+    render();
+  };
+  container.appendChild(chip);
+}
+
+function renderDonut(winnerCount, total) {
+  const keys = CFG_ORDER.filter(k => (winnerCount[k]||0) > 0);
+  if (chartDonut) { chartDonut.destroy(); chartDonut = null; }
+  const ctx = document.getElementById('chart-donut').getContext('2d');
+  if (keys.length === 0) return;
+  chartDonut = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: keys.map(k => CFG_SHORT[k]),
+      datasets: [{
+        data: keys.map(k => winnerCount[k]),
+        backgroundColor: keys.map(k => CFG_COLORS[k]),
+        borderWidth: 2,
+        borderColor: '#fff',
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '60%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            font: { size: 10, family: 'Segoe UI, system-ui' },
+            boxWidth: 10,
+            padding: 8
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw/total*100)}%)`
+          }
+        }
+      }
+    }
+  });
+}
+function renderBarGlobal(subs) {
+  const n = subs.length;
+  const avgs = CFG_ORDER.map(k => n > 0 ? +(subs.reduce((s,r) => s+(r['score_'+k]||0), 0)/n).toFixed(1) : 0);
+  if (chartBarGlobal) { chartBarGlobal.destroy(); chartBarGlobal = null; }
+  const ctx = document.getElementById('chart-bar-global').getContext('2d');
+  chartBarGlobal = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: CFG_ORDER.map(k => CFG_SHORT[k]),
+      datasets: [{
+        label: 'Score moyen',
+        data: avgs,
+        backgroundColor: CFG_ORDER.map(k => CFG_COLORS[k] + 'CC'),
+        borderColor: CFG_ORDER.map(k => CFG_COLORS[k]),
+        borderWidth: 1.5,
+        borderRadius: 4,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ` Score moyen : ${c.raw}` } }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 11,
+          grid: { color: '#EDEBE9' },
+          ticks: { font: { size: 10 }, color: '#605E5C', stepSize: 2 }
+        },
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 10 }, color: '#605E5C' }
+        }
+      }
+    }
+  });
+}
+
+function renderCompanyGrid(data) {
+  Object.values(companyCharts).forEach(ch => ch && ch.destroy());
+  Object.keys(companyCharts).forEach(k => delete companyCharts[k]);
+
+  const grid = document.getElementById('company-grid');
+  grid.innerHTML = '';
+  const companies = Object.keys(data);
+  const label = document.getElementById('companies-section-label');
+  label.textContent = selectedCompany === '__all__'
+    ? `Détail par entreprise (${companies.length})`
+    : 'Entreprise sélectionnée';
+
+  if (companies.length === 0) {
+    grid.innerHTML = '<div class="empty-state">Aucune donnée disponible.</div>';
+    return;
+  }
+
+  companies.forEach(company => {
+    grid.appendChild(buildCompanyCard(company, data[company]));
+  });
+  requestAnimationFrame(() => {
+    companies.forEach(company => {
+      const canvasId = 'radar-' + sanitize(company);
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+
+      const subs = data[company];
+      const n = subs.length;
+      const radarOrder = ['SE','BM','DO','MI','AD','BP'];
+      const vals = radarOrder.map(k => +(subs.reduce((s,r) => s+(r['score_'+k]||0), 0)/n).toFixed(1));
+
+      companyCharts[company] = new Chart(canvas.getContext('2d'), {
+        type: 'radar',
+        data: {
+          labels: radarOrder.map(k => CFG_SHORT[k]),
+          datasets: [{
+            label: 'Score moyen',
+            data: vals,
+            backgroundColor: 'rgba(17,141,255,0.12)',
+            borderColor: '#118DFF',
+            borderWidth: 2,
+            pointBackgroundColor: radarOrder.map(k => CFG_COLORS[k]),
+            pointBorderColor: '#fff',
+            pointBorderWidth: 1.5,
+            pointRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            r: {
+              beginAtZero: true,
+              max: 11,
+              ticks: { display: false, stepSize: 2.75 },
+              grid: { color: '#EDEBE9' },
+              pointLabels: {
+                font: { size: 9, family: 'Segoe UI, system-ui' },
+                color: '#605E5C'
+              }
+            }
+          }
+        }
+      });
+    });
+  });
+}
+
+function buildCompanyCard(company, subs) {
+  const n = subs.length;
+  const winnerCount = {};
+  subs.forEach(s => { winnerCount[s.winner] = (winnerCount[s.winner]||0) + 1; });
+  const dominant = CFG_ORDER.reduce((a,b) => (winnerCount[a]||0) >= (winnerCount[b]||0) ? a : b);
+  const color = CFG_COLORS[dominant];
+
+  const avgScores = {};
+  CFG_ORDER.forEach(k => {
+    avgScores[k] = +(subs.reduce((s,r) => s+(r['score_'+k]||0), 0)/n).toFixed(1);
+  });
+  const maxScore = Math.max(...CFG_ORDER.map(k => avgScores[k]));
+  const canvasId = 'radar-' + sanitize(company);
+
+  const scoreBars = CFG_ORDER.map(k => {
+    const pct = maxScore > 0 ? Math.round((avgScores[k]/maxScore)*100) : 0;
+    const isTop = k === dominant;
+    const fill = isTop ? CFG_COLORS[k] : '#C8C6C4';
+    const val = avgScores[k];
+    return `<div class="score-bar-row">
+      <span class="score-bar-name" title="${CFG_NAMES[k]}">${CFG_SHORT[k]}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${fill};"></div></div>
+      <span class="score-bar-val">${val}</span>
+    </div>`;
+  }).join('');
+
+  const subRows = subs.map(s => {
+    const date = new Date(s.submitted_at + 'Z').toLocaleString('fr-FR', {dateStyle:'short', timeStyle:'short'});
+    const c = CFG_COLORS[s.winner];
+    const scores = CFG_ORDER.map(k =>
+      `<span class="sub-score" title="${CFG_NAMES[k]}">${k}:${s['score_'+k]}</span>`
+    ).join('');
+    return `<div class="sub-row">
+      <span class="config-badge" style="background:${c}1A;color:${c};border:1px solid ${c}44;font-size:10px;">${CFG_SHORT[s.winner]}</span>
+      <span class="sub-date">${date}</span>
+      <div class="sub-scores">${scores}</div>
+    </div>`;
+  }).join('');
+
+  const size = subs[0]?.company_size ? esc(subs[0].company_size) : 'Taille non renseignée';
+
+  const card = document.createElement('div');
+  card.className = 'company-card';
+  card.innerHTML = `
+    <div class="company-card-header">
+      <div>
+        <div class="company-card-name">${esc(company)}</div>
+        <div class="company-card-meta">${n} réponse${n>1?'s':''} · ${size}</div>
+      </div>
+      <span class="config-badge" style="background:${color}1A;color:${color};border:1px solid ${color}44;">${CFG_SHORT[dominant]}</span>
+    </div>
+    <div class="company-card-body">
+      <div>
+        <div class="panel-title">Scores moyens${n>1?' (agrégés)':''}</div>
+        ${scoreBars}
+      </div>
+      <div>
+        <div class="panel-title">Profil radar</div>
+        <div style="height:180px;"><canvas id="${canvasId}"></canvas></div>
+      </div>
+    </div>
+    <div class="submissions-section">
+      <div class="submissions-header">Historique des réponses (${n})</div>
+      ${subRows}
+    </div>`;
+  return card;
+}
+
+/*utils*/
+function sanitize(s) { return s.replace(/[^a-zA-Z0-9]/g, '_'); }
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+loadResults();
+</script>
+</body>
+</html>
