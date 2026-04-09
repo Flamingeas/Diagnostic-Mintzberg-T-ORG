@@ -1,0 +1,13 @@
+{
+  "name": "t-org-mintzberg",
+  "version": "1.0.0",
+  "description": "Mintzberg organisational diagnostic — results backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.4.3",
+    "express": "^4.18.2"
+  }
+}
