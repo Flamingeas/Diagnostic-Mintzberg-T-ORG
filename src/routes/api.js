@@ -45,11 +45,25 @@ router.post('/submit', (req, res) => {
   res.json({ ok: true });
 });
 
-router.get('/results', (req, res) => {
+function basicAuth(req, res, next) {
+  const header = req.headers['authorization'];
+  if (!header || !header.startsWith('Basic ')) {
+    res.set('WWW-Authenticate', 'Basic realm="Résultats Mintzberg"');
+    return res.status(401).send('Accès restreint.');
+  }
+  const [user, pass] = Buffer.from(header.slice(6), 'base64').toString().split(':');
+  const RESULTS_USER = process.env.RESULTS_USER || 'admin';
+  const RESULTS_PASS = process.env.RESULTS_PASS || 'mintzberg';
+  if (user === RESULTS_USER && pass === RESULTS_PASS) return next();
+  res.set('WWW-Authenticate', 'Basic realm="Résultats Mintzberg"');
+  return res.status(401).send('Identifiants incorrects.');
+}
+
+router.get('/results', basicAuth, (req, res) => {
   res.redirect('/results.html');
 });
 
-router.get('/results/data', (req, res) => {
+router.get('/results/data', basicAuth, (req, res) => {
   const rows = db.prepare(`
     SELECT * FROM responses ORDER BY company_name, submitted_at DESC
   `).all();
@@ -62,7 +76,7 @@ router.get('/results/data', (req, res) => {
   res.json(grouped);
 });
 
-router.get('/results/:company', (req, res) => {
+router.get('/results/:company', basicAuth, (req, res) => {
   const rows = db.prepare(`
     SELECT * FROM responses WHERE company_name = ? ORDER BY submitted_at DESC
   `).all(req.params.company);
