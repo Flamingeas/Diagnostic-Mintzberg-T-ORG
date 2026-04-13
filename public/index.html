@@ -656,27 +656,46 @@ function showResult() {
     answers[input.name] = input.value;
   });
 
-  fetch('/api/submit', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      company_name: document.getElementById('company-name').value.trim(),
-      company_size: document.getElementById('company-size').value,
-      answers,
-      scores,
-      winner,
-      runner_up: runnerUp,
-      gap,
-    }),
-  }).then(res => {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  }).catch(err => {
-    console.error('Erreur lors de la sauvegarde :', err);
-    const notice = document.createElement('p');
-    notice.style.cssText = 'color:#c00;font-size:13px;text-align:center;margin-top:16px;';
-    notice.textContent = 'Attention : la sauvegarde des résultats a échoué. Veuillez contacter l\'administrateur.';
-    document.getElementById('result-section').appendChild(notice);
+  const submitPayload = JSON.stringify({
+    company_name: document.getElementById('company-name').value.trim(),
+    company_size: document.getElementById('company-size').value,
+    answers,
+    scores,
+    winner,
+    runner_up: runnerUp,
+    gap,
   });
+
+  async function trySubmit(attemptsLeft) {
+    try {
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: submitPayload,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      if (!data.ok || !data.id) {
+        throw new Error('Réponse serveur inattendue.');
+      }
+      console.log(`[submit] Enregistré avec succès (id=${data.id})`);
+    } catch (err) {
+      if (attemptsLeft > 1) {
+        console.warn(`[submit] Échec (${err.message}), nouvelle tentative dans 3s…`);
+        await new Promise(r => setTimeout(r, 3000));
+        return trySubmit(attemptsLeft - 1);
+      }
+      console.error('[submit] Échec définitif :', err.message);
+      const notice = document.createElement('p');
+      notice.style.cssText = 'color:#c00;font-size:13px;text-align:center;margin-top:16px;';
+      notice.textContent = `Attention : la sauvegarde a échoué (${err.message}). Veuillez contacter l'administrateur.`;
+      document.getElementById('result-section').appendChild(notice);
+    }
+  }
+
+  trySubmit(3);
 }
 
 function drawRadar(scores) {
