@@ -24,8 +24,11 @@ Le champ est verrouillé pour éviter les erreurs de saisie.
 ## Consulter les résultats
 
 - Dashboard complet : `/results.html`
-- Toutes les réponses (JSON) : `/api/results/data`
-- Réponses par organisation : `/api/results/NomOrganisation`
+- Toutes les réponses (JSON) : `/api/results/data` (protégées par auth)
+- Réponses par organisation : `/api/results/NomOrganisation` (protégées par auth)
+### Visuel Dashboard Admin
+<img width="1844" height="916" alt="image" src="https://github.com/user-attachments/assets/a2231e50-fe74-4a6e-885c-8397e78300ac" />
+
 
 ## Déploiement (Railway)
 
@@ -39,3 +42,5 @@ Le champ est verrouillé pour éviter les erreurs de saisie.
 - Node.js / Express
 - SQLite (better-sqlite3)
 - HTML/CSS/JS vanilla
+
+
