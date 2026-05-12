@@ -94,4 +94,12 @@ router.get('/results/:company', basicAuth, (req, res) => {
   res.json(rows);
 });
 
+router.delete('/results/:id', basicAuth, (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!id) return res.status(400).json({ error: 'Invalid id.' });
+  const result = db.prepare('DELETE FROM responses WHERE id = ?').run(id);
+  if (result.changes === 0) return res.status(404).json({ error: 'Not found.' });
+  res.json({ ok: true });
+});
+
 module.exports = router;

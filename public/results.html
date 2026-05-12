@@ -196,6 +196,19 @@
     .submissions-header { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 10px 0 6px; }
     .sub-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; flex-wrap: wrap; border-bottom: 1px solid #F3F2F1; }
     .sub-row:last-child { border-bottom: none; }
+    .btn-delete {
+      margin-left: auto;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #C8C6C4;
+      padding: 2px 4px;
+      border-radius: 3px;
+      line-height: 1;
+      transition: color .15s, background .15s;
+      flex-shrink: 0;
+    }
+    .btn-delete:hover { color: #E74C3C; background: #fdf0ef; }
     .sub-date { font-size: 11px; color: #A8A6A3; }
     .sub-scores { display: flex; gap: 4px; flex-wrap: wrap; }
     .sub-score { font-size: 10px; background: #F3F2F1; color: var(--muted); padding: 1px 6px; border-radius: 2px; font-family: 'Consolas', 'Courier New', monospace; }
@@ -593,10 +606,13 @@ function buildCompanyCard(company, subs) {
     const scores = CFG_ORDER.map(k =>
       `<span class="sub-score" title="${CFG_NAMES[k]}">${k}:${s['score_'+k]}</span>`
     ).join('');
-    return `<div class="sub-row">
+    return `<div class="sub-row" id="sub-${s.id}">
       <span class="config-badge" style="background:${c}1A;color:${c};border:1px solid ${c}44;font-size:10px;">${CFG_SHORT[s.winner]}</span>
       <span class="sub-date">${date}</span>
       <div class="sub-scores">${scores}</div>
+      <button class="btn-delete" title="Supprimer cette soumission" onclick="deleteSubmission(${s.id}, '${esc(company)}')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      </button>
     </div>`;
   }).join('');
 
@@ -627,6 +643,22 @@ function buildCompanyCard(company, subs) {
       ${subRows}
     </div>`;
   return card;
+}
+
+async function deleteSubmission(id, company) {
+  if (!confirm(`Supprimer cette soumission de "${company}" ?\nCette action est irréversible.`)) return;
+  try {
+    const res = await fetch(`/api/results/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    // retirer de globalData sans recharger
+    if (globalData[company]) {
+      globalData[company] = globalData[company].filter(s => s.id !== id);
+      if (globalData[company].length === 0) delete globalData[company];
+    }
+    render();
+  } catch(e) {
+    alert('Erreur lors de la suppression : ' + e.message);
+  }
 }
 
 /*utils*/
